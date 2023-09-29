@@ -5,7 +5,7 @@
 In your Go project `go.mod` file, add `spark-connect-go` library:
 ```
 require (
-	github.com/apache/spark-connect-go/v34 master
+	github.com/sigmarkarl/spark-connect-go/v34 master
 )
 ```
 
@@ -21,11 +21,14 @@ import (
 	"flag"
 	"log"
 
-	"github.com/apache/spark-connect-go/v34/client/sql"
+	"github.com/sigmarkarl/spark-connect-go/v34/client/sql"
 )
 
 var (
-	remote = flag.String("remote", "sc://localhost:15002",
+	remote = flag.String("remote", 
+		//"sc://localhost:15002",
+		//"ws://localhost:8080",
+		"wss://api.spotinst.io/ocean/spark/cluster/osc-239fd6f0/app/spark-connect-7702c-paste/connect?accountId=act-12f6b1b9;token=mytoken",
 		"the remote address of Spark Connect server to connect to")
 )
 
