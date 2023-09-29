@@ -29,9 +29,9 @@ See [Quick Start Guide](quick-start.md)
 
 A very simple example in Go looks like following:
 
-```
+```go
 func main() {
-	remote := "localhost:15002"
+	remote := fmt.Sprintf("wss://api.spotinst.io/ocean/spark/cluster/%s/app/%s/connect?accountId=%s;token=%s", cluster, app, account, token)
 	spark, _ := sql.SparkSession.Builder.Remote(remote).Build()
 	defer spark.Stop()
 
