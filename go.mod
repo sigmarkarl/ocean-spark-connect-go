@@ -28,6 +28,7 @@ require (
 require (
 	cloud.google.com/go/compute v1.15.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
+	github.com/gorilla/websocket v1.5.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 )
 

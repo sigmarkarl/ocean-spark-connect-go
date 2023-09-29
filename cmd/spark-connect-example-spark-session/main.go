@@ -24,7 +24,10 @@ import (
 )
 
 var (
-	remote = flag.String("remote", "sc://localhost:15002",
+	remote = flag.String("remote",
+		//"ws://localhost:8091",
+		//"sc://localhost",
+		"wss://api.spotinst.io/ocean/spark/cluster/osc-239fd6f0/app/spark-connect-7702c-paste/connect?accountId=act-12f6b1b9;token=test",
 		"the remote address of Spark Connect server to connect to")
 )
 

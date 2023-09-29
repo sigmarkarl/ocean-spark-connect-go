@@ -17,18 +17,25 @@
 package channel
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"log"
 	"net"
+	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
+
+	"github.com/gorilla/websocket"
 
 	"golang.org/x/oauth2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/credentials/oauth"
 )
 
@@ -40,22 +47,91 @@ var reservedParams = []string{"user_id", "token", "use_ssl"}
 //
 //	https://github.com/apache/spark/blob/master/connector/connect/docs/client-connection-string.md
 type ChannelBuilder struct {
+	Scheme  string
 	Host    string
 	Port    int
+	Path    string
+	Query   string
 	Token   string
 	User    string
 	Headers map[string]string
 }
 
-// Finalizes the creation of the gprc.ClientConn by creating a GRPC channel
-// with the necessary options extracted from the connection string. For
-// TLS connections, this function will load the system certificates.
 func (cb *ChannelBuilder) Build() (*grpc.ClientConn, error) {
 	var opts []grpc.DialOption
 
+	remote := fmt.Sprintf("%v:%v", cb.Host, cb.Port)
 	opts = append(opts, grpc.WithAuthority(cb.Host))
-	if cb.Token == "" {
-		opts = append(opts, grpc.WithInsecure())
+	if cb.Scheme != "sc" {
+		grpcSide, websocketSide := net.Pipe()
+		u := url.URL{Scheme: cb.Scheme, Host: remote, Path: cb.Path, RawQuery: cb.Query}
+		remote = ""
+		header := http.Header{}
+		header.Set("Authorization", "Bearer "+cb.Token)
+
+		c, _, err := websocket.DefaultDialer.Dial(u.String(), header)
+		if err != nil {
+			log.Fatal("dial:", err)
+		}
+
+		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
+		opts = append(opts, grpc.WithContextDialer(func(ctx context.Context, s string) (net.Conn, error) {
+			return grpcSide, nil
+		}))
+
+		done := make(chan struct{})
+		data := make([]byte, 10*1024*1024)
+		var wg sync.WaitGroup
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			defer c.Close()
+			defer close(done)
+			for {
+				mt, message, err := c.ReadMessage()
+				if err != nil {
+					log.Println("c.ReadMessage:", err)
+					break
+				}
+
+				if mt != websocket.BinaryMessage {
+					log.Println("mt != websocket.BinaryMessage")
+					break
+				}
+
+				n, err := websocketSide.Write(message)
+				if err != nil {
+					log.Println("pipe.Write:", err)
+					break
+				}
+
+				if len(message) != n {
+					log.Printf("whooot! len(data) != n => %d != %d!\n", len(message), n)
+					break
+				}
+			}
+		}()
+
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for {
+				n, err := websocketSide.Read(data)
+				if err != nil {
+					log.Println("pipe.Read:", err)
+					break
+				}
+
+				err = c.WriteMessage(websocket.BinaryMessage, data[:n])
+				if err != nil {
+					log.Println("c.WriteMessage:", err)
+					break
+				}
+			}
+		}()
+	} else if cb.Token == "" {
+		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	} else {
 		// Note: On the Windows platform, use of x509.SystemCertPool() requires
 		// go version 1.18 or higher.
@@ -75,7 +151,6 @@ func (cb *ChannelBuilder) Build() (*grpc.ClientConn, error) {
 		opts = append(opts, grpc.WithPerRPCCredentials(oauth.NewOauthAccess(&t)))
 	}
 
-	remote := fmt.Sprintf("%v:%v", cb.Host, cb.Port)
 	conn, err := grpc.Dial(remote, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to remote %s: %w", remote, err)
@@ -92,11 +167,17 @@ func NewBuilder(connection string) (*ChannelBuilder, error) {
 		return nil, err
 	}
 
-	if u.Scheme != "sc" {
+	scheme := u.Scheme
+	if scheme != "sc" && scheme != "ws" && scheme != "wss" {
 		return nil, errors.New("URL schema must be set to `sc`.")
 	}
 
 	var port = 15002
+	if scheme == "ws" {
+		port = 80
+	} else if scheme == "wss" {
+		port = 443
+	}
 	var host = u.Host
 	// Check if the host part of the URL contains a port and extract.
 	if strings.Contains(u.Host, ":") {
@@ -114,17 +195,30 @@ func NewBuilder(connection string) (*ChannelBuilder, error) {
 	}
 
 	// Validate that the URL path is empty or follows the right format.
-	if u.Path != "" && !strings.HasPrefix(u.Path, "/;") {
+	if scheme == "sc" && u.Path != "" && !strings.HasPrefix(u.Path, "/;") {
 		return nil, fmt.Errorf("The URL path (%v) must be empty or have a proper parameter syntax.", u.Path)
 	}
 
+	var elements []string
+	if scheme == "sc" {
+		elements = strings.Split(u.Path, ";")
+	} else {
+		elements = strings.Split(u.RawQuery, ";")[1:]
+		k := strings.Index(u.RawQuery, ";")
+		if k > 0 {
+			u.RawQuery = u.RawQuery[:k]
+		}
+	}
+
 	cb := &ChannelBuilder{
+		Scheme:  scheme,
 		Host:    host,
 		Port:    port,
+		Path:    u.Path,
+		Query:   u.RawQuery,
 		Headers: map[string]string{},
 	}
 
-	elements := strings.Split(u.Path, ";")
 	for _, e := range elements {
 		props := strings.Split(e, "=")
 		if len(props) == 2 {
