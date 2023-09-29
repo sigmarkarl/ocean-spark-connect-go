@@ -1,8 +1,8 @@
 # Quick Start Guide to Write Spark Connect Client Application in Go
 
-## Add Reference to `spark-connect-go` Library
+## Add Reference to `ocean-spark-connect-go` Library
 
-In your Go project `go.mod` file, add `spark-connect-go` library:
+In your Go project `go.mod` file, add `ocean-spark-connect-go` library:
 ```
 require (
 	github.com/sigmarkarl/ocean-spark-connect-go/v34 master
