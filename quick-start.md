@@ -5,7 +5,7 @@
 In your Go project `go.mod` file, add `spark-connect-go` library:
 ```
 require (
-	github.com/sigmarkarl/spark-connect-go/v34 master
+	github.com/sigmarkarl/ocean-spark-connect-go/v34 master
 )
 ```
 
@@ -14,14 +14,14 @@ In your Go project, run `go mod tidy` to download the library on your local mach
 ## Write Spark Connect Client Application
 
 Create `main.go` file with following code:
-```
+```go
 package main
 
 import (
 	"flag"
 	"log"
 
-	"github.com/sigmarkarl/spark-connect-go/v34/client/sql"
+	"github.com/sigmarkarl/ocean-spark-connect-go/v34/client/sql"
 )
 
 var (
