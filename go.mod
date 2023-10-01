@@ -15,6 +15,8 @@
 
 module github.com/sigmarkarl/ocean-spark-connect-go/v34
 
+replace github.com/apache/spark-connect-go => github.com/sigmarkarl/ocean-spark-connect-go
+
 go 1.19
 
 require (
