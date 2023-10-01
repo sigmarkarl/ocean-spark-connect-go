@@ -21,11 +21,12 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/apache/spark-connect-go/v34/client/channel"
-	proto "github.com/apache/spark-connect-go/v34/internal/generated"
-	"github.com/google/uuid"
-	"google.golang.org/grpc/metadata"
 	"io"
+
+	"github.com/google/uuid"
+	"github.com/sigmarkarl/ocean-spark-connect-go/v34/client/channel"
+	proto "github.com/sigmarkarl/ocean-spark-connect-go/v34/internal/generated"
+	"google.golang.org/grpc/metadata"
 )
 
 var SparkSession sparkSessionBuilderEntrypoint
