@@ -1,6 +1,6 @@
 # Apache Spark Connect Client for Golang
 
-This project houses the **experimental** client for [Spark
+This project houses the **experimental** client for [Ocean Spark
 Connect](https://spark.apache.org/docs/latest/spark-connect-overview.html) for
 [Apache Spark](https://spark.apache.org/) written in [Golang](https://go.dev/).
 
@@ -14,7 +14,7 @@ if it is not sustainable.
 
 ## Getting started
 ```
-git clone https://github.com/apache/spark-connect-go.git
+git clone https://github.com/sigmarkarl/ocean-spark-connect-go.git
 git submodule update --init --recursive
 
 make gen && make test

@@ -1,7 +1,7 @@
 package sql
 
 import (
-	proto "github.com/apache/spark-connect-go/v34/internal/generated"
+	proto "github.com/sigmarkarl/ocean-spark-connect-go/v34/internal/generated"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

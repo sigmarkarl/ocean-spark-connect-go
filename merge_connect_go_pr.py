@@ -59,7 +59,7 @@ JIRA_PASSWORD = os.environ.get("JIRA_PASSWORD", "")
 GITHUB_OAUTH_KEY = os.environ.get("GITHUB_OAUTH_KEY")
 
 
-GITHUB_BASE = "https://github.com/apache/spark-connect-go/pull"
+GITHUB_BASE = "https://github.com/sigmarkarl/ocean-spark-connect-go/pull"
 GITHUB_API_BASE = "https://api.github.com/repos/apache/spark-connect-go"
 JIRA_BASE = "https://issues.apache.org/jira/browse"
 JIRA_API_BASE = "https://issues.apache.org/jira"
