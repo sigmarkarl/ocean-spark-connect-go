@@ -26,6 +26,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sigmarkarl/ocean-spark-connect-go/v34/client/channel"
 	proto "github.com/sigmarkarl/ocean-spark-connect-go/v34/internal/generated"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 )
 
@@ -72,6 +73,7 @@ func (s SparkSessionBuilder) Build() (sparkSession, error) {
 	client := proto.NewSparkConnectServiceClient(conn)
 	return &sparkSessionImpl{
 		sessionId: uuid.NewString(),
+		conn:      conn,
 		client:    client,
 		metadata:  meta,
 	}, nil
@@ -79,6 +81,7 @@ func (s SparkSessionBuilder) Build() (sparkSession, error) {
 
 type sparkSessionImpl struct {
 	sessionId string
+	conn      *grpc.ClientConn
 	client    proto.SparkConnectServiceClient
 	metadata  metadata.MD
 }
@@ -123,7 +126,7 @@ func (s *sparkSessionImpl) Sql(query string) (DataFrame, error) {
 }
 
 func (s *sparkSessionImpl) Stop() error {
-	return nil
+	return s.conn.Close()
 }
 
 func (s *sparkSessionImpl) executePlan(plan *proto.Plan) (proto.SparkConnectService_ExecutePlanClient, error) {
